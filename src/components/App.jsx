@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Wrapper, Header } from './App.styled';
 import { ContactForm } from './contactForm/ContactForm';
@@ -6,29 +6,40 @@ import { Filter } from './filter/Filter';
 import { ContactList } from './contactList/ContactList';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilter } from 'redux/filterSlice';
-import { addedContact, deletedContact } from 'redux/contactsSlice';
-import { getСontacts, getFilter } from 'redux/selectors';
+import {
+  selectСontacts,
+  selectFilter,
+  selectError,
+  selectIsLoading,
+} from 'redux/selectors';
+import { addContact, deleteContact, fetchContacts } from 'redux/operations';
 
 export function App() {
   const dispatch = useDispatch();
-  const contacts = useSelector(getСontacts);
-  const filter = useSelector(getFilter);
+  const contacts = useSelector(selectСontacts);
+  const filter = useSelector(selectFilter);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
 
-  const deleteContact = contactId => {
-    dispatch(deletedContact(contactId));
+  useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
+
+  const onDeleteContact = contactId => {
+    dispatch(deleteContact(contactId));
   };
 
-  const addContact = (name, number) => {
+  const onAddContact = newcontact => {
     if (
       contacts.find(
-        contact => contact.name.toLowerCase() === name.toLowerCase()
+        contact => contact.name.toLowerCase() === newcontact.name.toLowerCase()
       )
     ) {
-      alert(`${name} is already in contacts`);
+      alert(`${newcontact.name} is already in contacts!`);
       return;
     }
 
-    dispatch(addedContact(name, number));
+    dispatch(addContact(newcontact));
   };
 
   const changeFilter = event => dispatch(setFilter(event.currentTarget.value));
@@ -44,13 +55,14 @@ export function App() {
   return (
     <Wrapper>
       <Header>Phonebook</Header>
-      <ContactForm onSubmit={addContact} />
+      <ContactForm onSubmit={onAddContact} />
 
       <h2>Contacts</h2>
       <Filter value={filter} onChange={changeFilter} />
+      {isLoading && !error && <b>Request in progress...</b>}
       <ContactList
         filtredContacts={filtredContacts}
-        onDeleteContact={deleteContact}
+        onDeleteContact={onDeleteContact}
       />
     </Wrapper>
   );
